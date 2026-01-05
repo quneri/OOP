@@ -1,30 +1,38 @@
 #pragma once
 
-#include <tuple>
-#include "AtomicChange.h"
+#include <utility>
 
 template<typename T>
 class AtomicTransaction {
 public:
 	explicit AtomicTransaction(T& object)
-		: original_(object), working_copy_(object) {}
+		: original_(object), copy_(object) {}
 
-	template<typename... Changes>
-	bool operator()(Changes&&... changes) {
-		bool success = applyAll(std::forward<Changes>(changes)...);
-		if (success) {
-			original_ = working_copy_;
+	template<typename... Operations>
+	bool operator()(Operations&&... ops) {
+		if (applyAll(std::forward<Operations>(ops)...)) {
+			original_ = copy_;
+			return true;
 		}
-		return success;
+		return false;
 	}
 
 private:
 	T& original_;
-	T working_copy_;
+	T copy_;
+
+	template<typename Operation>
+	bool applyOne(Operation&& op) {
+		try {
+			return op(copy_);
+		} catch (...) {
+			return false;
+		}
+	}
 
 	template<typename First, typename... Rest>
 	bool applyAll(First&& first, Rest&&... rest) {
-		if (!first.apply(working_copy_)) {
+		if (!applyOne(std::forward<First>(first))) {
 			return false;
 		}
 		if constexpr (sizeof...(Rest) > 0) {

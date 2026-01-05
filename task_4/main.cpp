@@ -1,71 +1,48 @@
 #include <iostream>
+
 #include "atomic_change_to.h"
-#include "FieldProxy.h"
 #include "Record.h"
 
 int main() {
 	Record person;
 
-	FieldProxy<Record, std::string> name(
-		[](Record& r, const std::string& v) {
-			return r.setName(v);
-		}
-	);
-
-	FieldProxy<Record, int> age(
-		[](Record& r, int v) {
-			r.age(v);
-			return true;
-		}
-	);
-
-	FieldProxy<Record, std::string> position(
-		[](Record& r, const std::string& v) {
-			r.position = v;
-			return true;
-		}
-	);
-
 	std::cout << std::boolalpha;
 
 	bool success1 = atomic_change_to(person)(
-		name = "Vasya",
-		age = 22,
-		position = "Best Developer"
+		[](Record& r) { return r.setName("Vasya"); },
+		[](Record& r) { r.age(22); return true; },
+		[](Record& r) { r.position = "Best Developer"; return true; }
 	);
 
-	std::cout << "Test 1: " << success1 << std::endl;
+	std::cout << "Test 1: " << success1 << '\n';
 
 	bool success2 = atomic_change_to(person)(
-		name = "",
-		age = 19,
-		position = "Junior Developer"
+		[](Record& r) { return r.setName(""); },
+		[](Record& r) { r.age(30); return true; }
 	);
 
-	std::cout << "Test 2: " << success2 << std::endl;
+	std::cout << "Test 2: " << success2 << '\n';
 
 	bool success3 = atomic_change_to(person)(
-		name = "Roma",
-		age = -19,
-		position = "Student"
+		[](Record& r) { r.age(-1); return true; }
 	);
 
-	std::cout << "Test 3: " << success3 << std::endl;
+	std::cout << "Test 3: " << success3 << '\n';
 
 	bool success4 = atomic_change_to(person)(
-		position = "Manager",
-		age = -10
+		[](Record& r) { r.position = "manager"; return true; },
+		[](Record& r) { r.age(-1); return true; }
 	);
 
-	std::cout << "Test 4: " << success4 << std::endl;
+	std::cout << "Test 4: " << success4 << '\n';
 
 	bool success5 = atomic_change_to(person)(
-		name = "Dima",
-		age = 55,
-		position = "Driver"
+		[](Record& r) { return r.setName("Roma"); },
+		[](Record& r) { r.age(19); return true; },
+		[](Record& r) { r.position = "Student"; return true; }
 	);
 
-	std::cout << "Test 5: " << success5 << std::endl;
+	std::cout << "Test 5: " << success5 << '\n';
 
 	return 0;
 }
